@@ -44,6 +44,13 @@ describe "Authentication" do
   	end
   end
 
+  describe 'sign in page for non signed in users' do
+    before { visit signin_path }
+
+    it { should_not have_link('Profile') }
+    it { should_not have_link('Settings') }
+  end
+
   describe "authorization" do
 
     describe "for non-signed-in users" do
@@ -61,6 +68,20 @@ describe "Authentication" do
 
           it "should render the desired protected page" do
             expect(page).to have_title('Edit user')
+          end
+
+          describe "when signing in" do
+            before do
+              delete signout_path
+              visit signin_path
+              fill_in "Email",    with: user.email
+              fill_in "Password", with: user.password
+              click_button "Sign in"
+            end
+
+            it "should render the default (profile) page" do
+              expect(page).to have_title(user.name)
+            end
           end
         end
       end
@@ -111,6 +132,16 @@ describe "Authentication" do
         before { delete user_path(user) } 
         specify { expect(response).to redirect_to(root_url) }
       end
+    end
+
+    describe "for signed in users trying to access" do
+      let(:user) { FactoryGirl.create(:user) }
+      before do
+        sign_in user
+        visit new_user_path
+      end
+
+      it { should_not have_title('Sign up') }
     end
   end
 end
